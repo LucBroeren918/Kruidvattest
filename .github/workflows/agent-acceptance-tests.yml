@@ -1,0 +1,180 @@
+name: Agent Acceptance Tests
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  validate-spec:
+    name: Validate acceptance spec and dashboard
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Check required files are present
+        run: |
+          echo "── Checking required files ──"
+          files=(
+            "index.html"
+            "prompts/master-prompt.md"
+            "data/price-data.json"
+            ".github/workflows/agent-acceptance-tests.yml"
+          )
+          missing=0
+          for f in "${files[@]}"; do
+            if [ -f "$f" ]; then
+              echo "✅  $f"
+            else
+              echo "❌  MISSING: $f"
+              missing=$((missing + 1))
+            fi
+          done
+          if [ $missing -gt 0 ]; then
+            echo ""
+            echo "ERROR: $missing required file(s) missing. See above."
+            exit 1
+          fi
+          echo ""
+          echo "All required files present."
+
+      - name: Validate index.html contains required sections
+        run: |
+          echo "── Validating dashboard sections ──"
+          checks=(
+            "Alert Table:alert-table"
+            "Evidence drawer:drawer"
+            "Daily Price Brief:brief-box"
+            "KPI row:kpi-row"
+            "Filter buttons:filter-btn"
+          )
+          fail=0
+          for check in "${checks[@]}"; do
+            name="${check%%:*}"
+            token="${check##*:}"
+            if grep -q "$token" index.html; then
+              echo "✅  $name"
+            else
+              echo "❌  MISSING in index.html: $name (searched for '$token')"
+              fail=$((fail + 1))
+            fi
+          done
+          if [ $fail -gt 0 ]; then exit 1; fi
+
+      - name: Validate all AI labels are present in dashboard
+        run: |
+          echo "── Validating AI action labels ──"
+          labels=(
+            "Price Alert"
+            "Promo Attack"
+            "Margin Block"
+            "Banner Alignment Alert"
+            "Private Label Value Gap"
+            "Manual Review"
+            "Opportunity"
+          )
+          fail=0
+          for label in "${labels[@]}"; do
+            if grep -q "$label" index.html; then
+              echo "✅  $label"
+            else
+              echo "❌  MISSING label: $label"
+              fail=$((fail + 1))
+            fi
+          done
+          if [ $fail -gt 0 ]; then exit 1; fi
+
+      - name: Validate golden test case IDs are referenced
+        run: |
+          echo "── Validating golden test case IDs ──"
+          test_ids=(
+            "TC_PROMO_MARGIN_001"
+            "TC_PRICE_ALERT_001"
+            "TC_BANNER_001"
+            "TC_PRIVATE_LABEL_001"
+            "TC_MANUAL_REVIEW_001"
+            "TC_OPPORTUNITY_001"
+          )
+          fail=0
+          for id in "${test_ids[@]}"; do
+            if grep -q "$id" index.html; then
+              echo "✅  $id"
+            else
+              echo "❌  MISSING test case: $id"
+              fail=$((fail + 1))
+            fi
+          done
+          if [ $fail -gt 0 ]; then exit 1; fi
+
+      - name: Validate minimum alert schema fields in dashboard
+        run: |
+          echo "── Validating alert schema fields ──"
+          fields=(
+            "kruidvat_price"
+            "market_average"
+            "lowest_competitor"
+            "gap_vs_lowest"
+            "margin_status"
+            "label"
+            "recommendation"
+            "evidence_url"
+            "confidence"
+          )
+          fail=0
+          for field in "${fields[@]}"; do
+            if grep -q "$field" index.html; then
+              echo "✅  $field"
+            else
+              echo "❌  MISSING schema field: $field"
+              fail=$((fail + 1))
+            fi
+          done
+          if [ $fail -gt 0 ]; then exit 1; fi
+
+      - name: Validate pilot scope in dashboard
+        run: |
+          echo "── Validating pilot scope ──"
+          scope=(
+            "Sun Care"
+            "Baby Wipes"
+            "Oral Care"
+          )
+          fail=0
+          for s in "${scope[@]}"; do
+            if grep -q "$s" index.html; then
+              echo "✅  $s"
+            else
+              echo "❌  MISSING product group: $s"
+              fail=$((fail + 1))
+            fi
+          done
+          if [ $fail -gt 0 ]; then exit 1; fi
+
+      - name: Validate master prompt version
+        run: |
+          echo "── Validating master prompt ──"
+          if grep -q "v0\." prompts/master-prompt.md; then
+            echo "✅  Prompt version tag found"
+          else
+            echo "⚠️  No version tag found in master-prompt.md — add 'v0.x' to track versions"
+          fi
+          lines=$(wc -l < prompts/master-prompt.md)
+          echo "ℹ️  Prompt length: $lines lines"
+          if [ "$lines" -lt 20 ]; then
+            echo "❌  Prompt is too short ($lines lines) — may be a placeholder"
+            exit 1
+          fi
+          echo "✅  Prompt length OK"
+
+      - name: Summary
+        run: |
+          echo ""
+          echo "══════════════════════════════════════════"
+          echo "  All acceptance checks passed ✅"
+          echo "  Kruidvat Price & Promo Advisory Agent"
+          echo "  CGI Workshop 2026"
+          echo "══════════════════════════════════════════"
