@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kruidvat Price & Promo Advisory</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --red:       #E2001A;
+      --red-dark:  #B0001A;
+      --red-light: #fdecea;
+      --white:     #ffffff;
+      --off:       #f7f7f7;
+      --border:    #e0e0e0;
+      --text:      #1a1a1a;
+      --muted:     #666;
+      --safe:      #1a7a3c;
+      --safe-bg:   #e8f5ee;
+      --risk:      #b85c00;
+      --risk-bg:   #fff3e0;
+      --block:     #c0001a;
+      --block-bg:  #fdecea;
+    }
+
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: var(--off);
+      color: var(--text);
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    /* ── HEADER ── */
+    header {
+      background: var(--red);
+      color: white;
+      padding: 0 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 56px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 2px 8px rgba(0,0,0,.15);
+    }
+    header .brand { font-size: 18px; font-weight: 700; letter-spacing: .5px; }
+    header .brand span { font-weight: 300; opacity: .85; }
+    header .meta { font-size: 12px; opacity: .8; }
+
+    /* ── LAYOUT ── */
+    main { max-width: 1280px; margin: 0 auto; padding: 24px 24px 64px; }
+
+    /* ── KPI ROW ── */
+    .kpi-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .kpi {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 20px 24px;
+      border-top: 3px solid var(--red);
+    }
+    .kpi .value { font-size: 32px; font-weight: 700; color: var(--red); line-height: 1; }
+    .kpi .label { font-size: 12px; color: var(--muted); margin-top: 6px; text-transform: uppercase; letter-spacing: .5px; }
+
+    /* ── SECTION TITLE ── */
+    .section-title {
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .8px;
+      color: var(--muted);
+      margin: 28px 0 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .section-title::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    /* ── FILTER BAR ── */
+    .filter-bar {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+    .filter-btn {
+      padding: 6px 14px;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      background: white;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--muted);
+      transition: all .15s;
+    }
+    .filter-btn:hover, .filter-btn.active {
+      background: var(--red);
+      color: white;
+      border-color: var(--red);
+    }
+
+    /* ── ALERT TABLE ── */
+    .table-wrap {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    table { width: 100%; border-collapse: collapse; }
+    thead tr { background: #fafafa; border-bottom: 2px solid var(--border); }
+    th {
+      padding: 10px 14px;
+      text-align: left;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .5px;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+    tbody tr {
+      border-bottom: 1px solid var(--border);
+      transition: background .1s;
+      cursor: pointer;
+    }
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover { background: #fafafa; }
+    tbody tr.expanded { background: #fdf5f5; }
+    td { padding: 12px 14px; vertical-align: middle; }
+    td.product-cell { font-weight: 600; max-width: 200px; }
+    td.product-cell .category { font-size: 11px; color: var(--muted); font-weight: 400; }
+
+    .price { font-variant-numeric: tabular-nums; }
+    .gap-neg { color: var(--block); font-weight: 700; }
+    .gap-pos { color: var(--safe); font-weight: 700; }
+
+    /* ── LABEL BADGES ── */
+    .label {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+    .label-price-alert        { background: #e3f0ff; color: #1558b0; }
+    .label-promo-attack       { background: #fff3cd; color: #7a4f00; }
+    .label-margin-block       { background: var(--block-bg); color: var(--block); }
+    .label-banner-alignment   { background: #f3e8ff; color: #6b21a8; }
+    .label-private-label      { background: #e8f5ee; color: #1a5c36; }
+    .label-manual-review      { background: #f0f0f0; color: #444; }
+    .label-opportunity        { background: #e8f5ee; color: var(--safe); }
+
+    /* ── MARGIN STATUS ── */
+    .margin-safe  { color: var(--safe);  font-weight: 600; font-size: 12px; }
+    .margin-risk  { color: var(--risk);  font-weight: 600; font-size: 12px; }
+    .margin-block { color: var(--block); font-weight: 600; font-size: 12px; }
+
+    /* ── CONFIDENCE ── */
+    .conf { font-size: 11px; }
+    .conf-high   { color: var(--safe); }
+    .conf-medium { color: var(--risk); }
+    .conf-low    { color: var(--block); }
+
+    /* ── EXPAND BUTTON ── */
+    .expand-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--muted);
+      font-size: 16px;
+      padding: 0 4px;
+      line-height: 1;
+      transition: transform .2s;
+    }
+    .expand-btn.open { transform: rotate(180deg); color: var(--red); }
+
+    /* ── EVIDENCE DRAWER ── */
+    .drawer-row { display: none; }
+    .drawer-row.open { display: table-row; }
+    .drawer-row td { padding: 0; }
+    .drawer {
+      background: #fdf5f5;
+      border-top: 1px dashed #f0b8bb;
+      padding: 16px 20px;
+    }
+    .drawer-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 12px;
+    }
+    .drawer-item .drawer-label {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: .5px;
+      color: var(--muted);
+      margin-bottom: 3px;
+      font-weight: 700;
+    }
+    .drawer-item .drawer-value { font-size: 13px; }
+    .drawer-rec {
+      background: white;
+      border-left: 3px solid var(--red);
+      padding: 10px 14px;
+      border-radius: 0 4px 4px 0;
+      font-size: 13px;
+      margin-top: 4px;
+    }
+    .drawer-rec strong { font-size: 10px; text-transform: uppercase; letter-spacing: .5px; color: var(--muted); display: block; margin-bottom: 4px; }
+
+    /* ── DAILY BRIEF ── */
+    .brief-box {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .brief-header {
+      background: var(--red);
+      color: white;
+      padding: 14px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .brief-header h2 { font-size: 14px; font-weight: 700; }
+    .brief-header .brief-date { font-size: 12px; opacity: .8; }
+    .brief-body { padding: 20px; }
+    .brief-summary {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+    .brief-stat {
+      text-align: center;
+      padding: 12px;
+      border-radius: 6px;
+      background: var(--off);
+    }
+    .brief-stat .n { font-size: 28px; font-weight: 700; }
+    .brief-stat .n.red { color: var(--red); }
+    .brief-stat .n.green { color: var(--safe); }
+    .brief-stat .n.amber { color: var(--risk); }
+    .brief-stat .lbl { font-size: 11px; color: var(--muted); margin-top: 2px; }
+    .brief-items { display: flex; flex-direction: column; gap: 8px; }
+    .brief-item {
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+      padding: 10px 12px;
+      border-radius: 6px;
+      background: var(--off);
+      font-size: 13px;
+    }
+    .brief-item .bi-label { flex-shrink: 0; }
+    .brief-item .bi-text { flex: 1; }
+    .brief-item .bi-action {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .3px;
+      color: var(--muted);
+      flex-shrink: 0;
+    }
+
+    /* ── FOOTER ── */
+    footer {
+      text-align: center;
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 40px;
+      padding-top: 20px;
+      border-top: 1px solid var(--border);
+    }
+
+    @media (max-width: 900px) {
+      .kpi-row { grid-template-columns: repeat(2, 1fr); }
+      .drawer-grid { grid-template-columns: 1fr 1fr; }
+      .brief-summary { grid-template-columns: repeat(3, 1fr); }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="brand">Kruidvat <span>Price & Promo Advisory</span></div>
+  <div class="meta">Pilot: Sun Care · Baby Wipes · Oral Care &nbsp;|&nbsp; 22 Jun 2026</div>
+</header>
+
+<main>
+
+  <!-- KPI ROW -->
+  <div class="kpi-row">
+    <div class="kpi">
+      <div class="value" id="kpi-alerts">6</div>
+      <div class="label">Active Alerts</div>
+    </div>
+    <div class="kpi">
+      <div class="value" id="kpi-blocked">1</div>
+      <div class="label">Margin Blocks</div>
+    </div>
+    <div class="kpi">
+      <div class="value" id="kpi-manual">1</div>
+      <div class="label">Manual Reviews</div>
+    </div>
+    <div class="kpi">
+      <div class="value" id="kpi-opportunity">1</div>
+      <div class="label">Opportunities</div>
+    </div>
+  </div>
+
+  <!-- ALERT TABLE -->
+  <div class="section-title">Alert Table</div>
+
+  <div class="filter-bar">
+    <button class="filter-btn active" onclick="filterAlerts('all', this)">All</button>
+    <button class="filter-btn" onclick="filterAlerts('Price Alert', this)">Price Alert</button>
+    <button class="filter-btn" onclick="filterAlerts('Promo Attack', this)">Promo Attack</button>
+    <button class="filter-btn" onclick="filterAlerts('Margin Block', this)">Margin Block</button>
+    <button class="filter-btn" onclick="filterAlerts('Banner Alignment Alert', this)">Banner Alignment</button>
+    <button class="filter-btn" onclick="filterAlerts('Private Label Value Gap', this)">Private Label</button>
+    <button class="filter-btn" onclick="filterAlerts('Manual Review', this)">Manual Review</button>
+    <button class="filter-btn" onclick="filterAlerts('Opportunity', this)">Opportunity</button>
+  </div>
+
+  <div class="table-wrap">
+    <table id="alert-table">
+      <thead>
+        <tr>
+          <th></th>
+          <th>Product</th>
+          <th>Kruidvat</th>
+          <th>Market Avg</th>
+          <th>Lowest</th>
+          <th>Gap vs Lowest</th>
+          <th>Margin</th>
+          <th>Label</th>
+          <th>Confidence</th>
+        </tr>
+      </thead>
+      <tbody id="alert-body"></tbody>
+    </table>
+  </div>
+
+  <!-- DAILY BRIEF -->
+  <div class="section-title">Daily Price Brief</div>
+
+  <div class="brief-box">
+    <div class="brief-header">
+      <h2>Daily Price Brief — Category Management</h2>
+      <span class="brief-date">22 June 2026 · Pilot run</span>
+    </div>
+    <div class="brief-body">
+      <div class="brief-summary">
+        <div class="brief-stat"><div class="n red" id="b-action">3</div><div class="lbl">Require Action</div></div>
+        <div class="brief-stat"><div class="n amber" id="b-watch">2</div><div class="lbl">Watch / Review</div></div>
+        <div class="brief-stat"><div class="n green" id="b-ok">1</div><div class="lbl">No Action Needed</div></div>
+      </div>
+      <div class="brief-items" id="brief-items"></div>
+    </div>
+  </div>
+
+</main>
+
+<footer>
+  Advisory agent only — no automatic price changes &nbsp;·&nbsp; CGI × Kruidvat Workshop 2026 &nbsp;·&nbsp; Prompt v0.3
+</footer>
+
+<script>
+  // ── DATA ─────────────────────────────────────────────────────────────────
+  // Replace or extend these rows after running your master prompt.
+  // Each row maps to the minimum_alert_schema from the acceptance spec.
+  const alerts = [
+    {
+      id: "TC_PROMO_MARGIN_001",
+      product: "WaterWipes 12 × 60st",
+      category: "Baby Wipes",
+      kruidvat_price: 18.99,
+      unit: "€0.026/wipe",
+      market_average: 17.40,
+      lowest_competitor: "Etos",
+      lowest_price: 9.49,
+      lowest_unit: "€0.013/wipe (1+1 free)",
+      gap_vs_market: "+9.1%",
+      gap_vs_lowest: "+100%",
+      gap_neg: true,
+      margin_status: "BLOCKED",
+      label: "Margin Block",
+      recommendation: "Competitor 1+1 free normalizes to €0.013/wipe — matching this price would breach the margin floor. Do not match. Escalate to category manager for supplier-funded promo discussion.",
+      evidence_url: "etos.nl/waterwipes-12x60",
+      evidence_timestamp: "2026-06-22 06:00",
+      evidence_promo: "1+1 gratis — week 25",
+      confidence: "High"
+    },
+    {
+      id: "TC_PRICE_ALERT_001",
+      product: "NIVEA Sun SPF50 200ml",
+      category: "Sun Care",
+      kruidvat_price: 9.99,
+      unit: "€4.995/100ml",
+      market_average: 9.45,
+      lowest_competitor: "Albert Heijn",
+      lowest_price: 8.49,
+      lowest_unit: "€4.245/100ml",
+      gap_vs_market: "+5.7%",
+      gap_vs_lowest: "+17.7%",
+      gap_neg: true,
+      margin_status: "SAFE",
+      label: "Price Alert",
+      recommendation: "Albert Heijn is €1.50 cheaper on an exact SKU match. Margin remains safe if Kruidvat matches at €8.49. Category manager to approve price adjustment.",
+      evidence_url: "ah.nl/nivea-sun-spf50-200ml",
+      evidence_timestamp: "2026-06-22 06:00",
+      evidence_promo: "No active promotion",
+      confidence: "High"
+    },
+    {
+      id: "TC_BANNER_001",
+      product: "Kruidvat Solait SPF30 175ml",
+      category: "Sun Care",
+      kruidvat_price: 6.99,
+      unit: "€3.994/100ml",
+      market_average: 7.10,
+      lowest_competitor: "Trekpleister",
+      lowest_price: 5.99,
+      lowest_unit: "€3.423/100ml",
+      gap_vs_market: "-1.5%",
+      gap_vs_lowest: "+16.7%",
+      gap_neg: true,
+      margin_status: "SAFE",
+      label: "Banner Alignment Alert",
+      recommendation: "Trekpleister (internal banner) is €1.00 cheaper on the same Solait SKU. Banner pricing is misaligned. Escalate to banner manager — not a standard competitor match.",
+      evidence_url: "trekpleister.nl/solait-spf30-175ml",
+      evidence_timestamp: "2026-06-22 06:00",
+      evidence_promo: "No active promotion",
+      confidence: "High"
+    },
+    {
+      id: "TC_PRIVATE_LABEL_001",
+      product: "Kruidvat Solait SPF50 200ml",
+      category: "Sun Care",
+      kruidvat_price: 5.49,
+      unit: "€2.745/100ml",
+      market_average: 8.20,
+      lowest_competitor: "DA",
+      lowest_price: 4.99,
+      lowest_unit: "€2.495/100ml",
+      gap_vs_market: "-33%",
+      gap_vs_lowest: "+10%",
+      gap_neg: true,
+      margin_status: "SAFE",
+      label: "Private Label Value Gap",
+      recommendation: "DA private label is €0.50 cheaper but is not an exact SKU match. Compare as a value proposition only. No direct price match required — flag for category review.",
+      evidence_url: "da.nl/private-label-sun-spf50",
+      evidence_timestamp: "2026-06-22 06:00",
+      evidence_promo: "No active promotion",
+      confidence: "Medium"
+    },
+    {
+      id: "TC_MANUAL_REVIEW_001",
+      product: "Zwitsal Toothpaste 75ml",
+      category: "Oral Care",
+      kruidvat_price: 2.99,
+      unit: "€3.987/100ml",
+      market_average: "—",
+      lowest_competitor: "bol.com (seller)",
+      lowest_price: 2.19,
+      lowest_unit: "unclear pack",
+      gap_vs_market: "—",
+      gap_vs_lowest: "+36.5%",
+      gap_neg: true,
+      margin_status: "SAFE",
+      label: "Manual Review",
+      recommendation: "Competitor listing is from a bol.com marketplace seller — pack size unclear and seller identity unverified. Do not act on this data. Route to analyst for manual verification.",
+      evidence_url: "bol.com/zwitsal-tandpasta",
+      evidence_timestamp: "2026-06-22 06:00",
+      evidence_promo: "Pack size ambiguous",
+      confidence: "Low"
+    },
+    {
+      id: "TC_OPPORTUNITY_001",
+      product: "Zwitsal Baby Wipes 72st",
+      category: "Baby Wipes",
+      kruidvat_price: 2.49,
+      unit: "€0.035/wipe",
+      market_average: 2.68,
+      lowest_competitor: "Jumbo",
+      lowest_price: 2.59,
+      lowest_unit: "€0.036/wipe",
+      gap_vs_market: "-7.1%",
+      gap_vs_lowest: "-3.9%",
+      gap_neg: false,
+      margin_status: "SAFE",
+      label: "Opportunity",
+      recommendation: "Kruidvat is the cheapest in-scope competitor on this SKU and margin is healthy. No action needed — consider highlighting in promotional materials.",
+      evidence_url: "jumbo.com/zwitsal-babydoekjes-72",
+      evidence_timestamp: "2026-06-22 06:00",
+      evidence_promo: "No active promotion",
+      confidence: "High"
+    }
+  ];
+
+  // ── LABEL → CSS CLASS ────────────────────────────────────────────────────
+  function labelClass(l) {
+    const map = {
+      "Price Alert":             "label-price-alert",
+      "Promo Attack":            "label-promo-attack",
+      "Margin Block":            "label-margin-block",
+      "Banner Alignment Alert":  "label-banner-alignment",
+      "Private Label Value Gap": "label-private-label",
+      "Manual Review":           "label-manual-review",
+      "Opportunity":             "label-opportunity"
+    };
+    return map[l] || "label-manual-review";
+  }
+
+  function marginClass(m) {
+    if (m === "SAFE")    return "margin-safe";
+    if (m === "BLOCKED") return "margin-block";
+    return "margin-risk";
+  }
+
+  function confClass(c) {
+    if (c === "High")   return "conf-high";
+    if (c === "Medium") return "conf-medium";
+    return "conf-low";
+  }
+
+  // ── RENDER TABLE ─────────────────────────────────────────────────────────
+  function renderTable(data) {
+    const tbody = document.getElementById("alert-body");
+    tbody.innerHTML = "";
+
+    data.forEach((a, i) => {
+      const dataRow = document.createElement("tr");
+      dataRow.dataset.label = a.label;
+      dataRow.classList.toggle("expanded", false);
+      dataRow.innerHTML = `
+        <td><button class="expand-btn" onclick="toggleDrawer(${i}, this)">▼</button></td>
+        <td class="product-cell">${a.product}<div class="category">${a.category}</div></td>
+        <td class="price">€${a.kruidvat_price}<br><span style="font-size:11px;color:var(--muted)">${a.unit}</span></td>
+        <td class="price">${typeof a.market_average === 'number' ? '€' + a.market_average.toFixed(2) : a.market_average}</td>
+        <td class="price">${a.lowest_competitor}<br><span style="font-size:11px;color:var(--muted)">€${a.lowest_price} · ${a.lowest_unit}</span></td>
+        <td class="${a.gap_neg ? 'gap-neg' : 'gap-pos'}">${a.gap_vs_lowest}</td>
+        <td class="${marginClass(a.margin_status)}">${a.margin_status}</td>
+        <td><span class="label ${labelClass(a.label)}">${a.label}</span></td>
+        <td class="conf ${confClass(a.confidence)}">${a.confidence}</td>
+      `;
+      dataRow.onclick = (e) => {
+        if (e.target.classList.contains("expand-btn")) return;
+        const btn = dataRow.querySelector(".expand-btn");
+        toggleDrawer(i, btn);
+      };
+
+      const drawerRow = document.createElement("tr");
+      drawerRow.classList.add("drawer-row");
+      drawerRow.id = `drawer-${i}`;
+      drawerRow.innerHTML = `
+        <td colspan="9">
+          <div class="drawer">
+            <div class="drawer-grid">
+              <div class="drawer-item">
+                <div class="drawer-label">Evidence URL</div>
+                <div class="drawer-value"><a href="https://${a.evidence_url}" target="_blank">${a.evidence_url}</a></div>
+              </div>
+              <div class="drawer-item">
+                <div class="drawer-label">Timestamp</div>
+                <div class="drawer-value">${a.evidence_timestamp}</div>
+              </div>
+              <div class="drawer-item">
+                <div class="drawer-label">Promo Text</div>
+                <div class="drawer-value">${a.evidence_promo}</div>
+              </div>
+            </div>
+            <div class="drawer-rec">
+              <strong>Recommendation</strong>
+              ${a.recommendation}
+            </div>
+          </div>
+        </td>
+      `;
+
+      tbody.appendChild(dataRow);
+      tbody.appendChild(drawerRow);
+    });
+  }
+
+  // ── DRAWER TOGGLE ────────────────────────────────────────────────────────
+  function toggleDrawer(i, btn) {
+    const drawer = document.getElementById(`drawer-${i}`);
+    const isOpen = drawer.classList.contains("open");
+    drawer.classList.toggle("open", !isOpen);
+    btn.classList.toggle("open", !isOpen);
+  }
+
+  // ── FILTER ───────────────────────────────────────────────────────────────
+  function filterAlerts(label, btn) {
+    document.querySelectorAll(".filter-btn").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    const filtered = label === "all" ? alerts : alerts.filter(a => a.label === label);
+    renderTable(filtered);
+  }
+
+  // ── DAILY BRIEF ──────────────────────────────────────────────────────────
+  function renderBrief() {
+    const items = document.getElementById("brief-items");
+    const briefData = [
+      { label: "Margin Block",            text: "WaterWipes 12×60 — competitor 1+1 free normalizes to 50% effective price. Matching would breach margin floor.",                     action: "Escalate" },
+      { label: "Price Alert",             text: "NIVEA Sun SPF50 200ml — Albert Heijn is €1.50 cheaper on exact match. Margin-safe to match at €8.49.",                             action: "Approve match" },
+      { label: "Banner Alignment Alert",  text: "Solait SPF30 175ml — Trekpleister banner is €1.00 cheaper. Internal banner misalignment requires banner manager review.",           action: "Banner review" },
+      { label: "Private Label Value Gap", text: "Solait SPF50 200ml — DA private label is cheaper but not a direct SKU match. Value gap only — no match required.",                 action: "Category review" },
+      { label: "Manual Review",           text: "Zwitsal Toothpaste 75ml — bol.com marketplace seller, pack size ambiguous. Do not act without analyst verification.",               action: "Route to analyst" },
+      { label: "Opportunity",             text: "Zwitsal Baby Wipes 72st — Kruidvat is cheapest in market with healthy margin. Consider featuring in leaflet or digital campaign.",  action: "No action" }
+    ];
+
+    items.innerHTML = briefData.map(b => `
+      <div class="brief-item">
+        <span class="bi-label"><span class="label ${labelClass(b.label)}">${b.label}</span></span>
+        <span class="bi-text">${b.text}</span>
+        <span class="bi-action">${b.action}</span>
+      </div>
+    `).join("");
+  }
+
+  // ── INIT ─────────────────────────────────────────────────────────────────
+  renderTable(alerts);
+  renderBrief();
+</script>
+</body>
+</html>
